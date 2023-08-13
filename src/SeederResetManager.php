@@ -111,7 +111,7 @@ class SeederResetManager
         $truncate = data_get($parameters, 'truncate') ?? SeederReset::prompt($tables);
 
         if (! $truncate) {
-            if (! data_get($parameters, 'ignoreSkip', false)) {
+            if (! data_get($parameters, 'ignoreSkip', count($tables) === 0)) {
                 SeederReset::skip('Not truncating');
             }
 
@@ -167,7 +167,7 @@ class SeederResetManager
     {
         $count = $tables->count();
         $nameOutput = $tables->map(fn($name) => " - " . $name)->join(PHP_EOL);
-        return $this->command->confirm(implode(PHP_EOL, [
+        return $count > 0 && $this->command->confirm(implode(PHP_EOL, [
             sprintf("You are about to truncate %s %s! This action cannot be undone:", $count, Str::plural('table', $count) ),
             $nameOutput,
             "",

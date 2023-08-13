@@ -8,23 +8,10 @@ use SnowBuilds\SeederReset\Concerns\SeederTruncate;
 
 class Seeder extends DatabaseSeeder
 {
+    use SeederTruncate;
+
     public function call($class, $silent = false, array $parameters = [])
     {
-        $classes = Arr::wrap($class);
-   
-        SeederReset::set(static::class, 'parameters', $parameters);
-
-        SeederReset::setSeeder($this);
-        SeederReset::setCommand($this->command);
-        
-        SeederReset::processTables($classes);
-
-        $parameters = array_merge([
-            'truncate' => false,
-            'ignoreSkip' => true,
-            $parameters
-        ]);
-
-        parent::call($class, $silent, $parameters);
+        $this->reset($class, $silent, $parameters);
     }
 }
