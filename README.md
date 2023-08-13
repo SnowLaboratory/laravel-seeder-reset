@@ -39,7 +39,7 @@ Prompt developers to truncate tables and delete old data before executing seeder
 You can install the package via composer:
 
 ```bash
-composer require "snowbuilds/laravel-seeder-reset:^0.0.1-alpha"
+composer require "snowbuilds/laravel-seeder-reset:^0.0.2"
 ```
 
 ```bash

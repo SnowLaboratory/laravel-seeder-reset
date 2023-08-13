@@ -23,7 +23,7 @@ trait SeederTruncate
         SeederReset::truncate($tables);
     }
 
-    public function reset($class, $silent = false, array $parameters = []) {
+    public function reset($class, $silent = false, array $parameters = [], $call=true) {
         $classes = Arr::wrap($class);
 
         SeederReset::processTables($classes);
@@ -35,7 +35,9 @@ trait SeederTruncate
             $parameters
         ]);
 
-        $this->call($class, $silent, $parameters);
+        if($call) {
+            $this->call($class, $silent, $parameters);
+        }
 
         SeederReset::boot();
     }
