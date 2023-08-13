@@ -8,6 +8,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Throwable;
 
 class SeederResetManager
@@ -102,23 +103,38 @@ class SeederResetManager
         return [];
     }
 
-    public function execute()
+    public function processTables(array $tables) 
     {
-        $tables = $this->resolveTables($this->getTruncated($this->seeder));
+        $tables = $this->resolveTables($tables);
+
         $parameters = $this->get(get_class($this->seeder), 'parameters');
-        $truncate = optional($parameters)->truncate || SeederReset::prompt($tables);
+        $truncate = data_get($parameters, 'truncate') ?? SeederReset::prompt($tables);
 
         if (! $truncate) {
-            SeederReset::skip('Not truncating');
+            if (! data_get($parameters, 'ignoreSkip', false)) {
+                SeederReset::skip('Not truncating');
+            }
+
             return false;
         }
 
         return tap($truncate, function () use ($tables) {
-            $this->beforeTruncate($tables->toArray());
-            $this->seeder->truncate($tables->toArray());
-            $this->afterTruncate($tables->toArray());
-            SeederReset::success('Seeder Reset!');
+            $tables = $tables->toArray();
+            $this->beforeTruncate($tables);
+
+            method_exists($this->seeder, 'truncate')
+                ? $this->seeder->truncate($tables)
+                : $this->truncate($tables);
+            
+            $this->afterTruncate($tables);
+            $count = count($tables);
+            SeederReset::success(sprintf('%s %s truncated!', $count, Str::plural('table', $count)));
         });
+    }
+
+    public function execute()
+    {
+        return $this->processTables($this->getTruncated($this->seeder));
     }
 
 
@@ -149,9 +165,10 @@ class SeederResetManager
 
     public function prompt(Collection $tables): bool
     {
+        $count = $tables->count();
         $nameOutput = $tables->map(fn($name) => " - " . $name)->join(PHP_EOL);
         return $this->command->confirm(implode(PHP_EOL, [
-            "You are about to truncate the following tables:",
+            sprintf("You are about to truncate %s %s! This action cannot be undone:", $count, Str::plural('table', $count) ),
             $nameOutput,
             "",
             "Continue truncating?"
