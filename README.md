@@ -25,7 +25,7 @@
 
 <a name="introduction"></a>
 ## Introduction
-Truncate tables and delete old data before executing seeders. 
+Prompt developers to truncate tables and delete old data before executing seeders. Great for seeding projects that prohibit duplicate data!
 
 <a name="installation"></a>
 ## Installation
