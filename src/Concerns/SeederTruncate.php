@@ -3,7 +3,6 @@
 namespace SnowBuilds\SeederReset\Concerns;
 
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use SnowBuilds\SeederReset\SeederReset;
 
 trait SeederTruncate 

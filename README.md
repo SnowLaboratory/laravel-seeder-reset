@@ -16,6 +16,10 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [List tables to truncate](#list-tables-truncate)
+    - [Reset seeders](#reset-seeders)
+    - [Override seeder](#override-seeder)
+    - [Hooks](#hooks)
 - [Roadmap](#roadmap)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
@@ -26,6 +30,8 @@
 <a name="introduction"></a>
 ## Introduction
 Prompt developers to truncate tables and delete old data before executing seeders. Great for seeding projects that prohibit duplicate data!
+
+<p align="left"><img width="472" src="./art/console-screenshot.jpg" alt="Laravel SeederReset Package Logo"></p>
 
 <a name="installation"></a>
 ## Installation
@@ -42,34 +48,158 @@ php artisan vendor:publish --provider="SnowBuilds\SeederReset\SeederResetService
 
 <a name="usage"></a>
 ## Usage
-Include the `SeederReset` trait in your seeders to prompt for truncation.
+Include the `SnowBuilds\SeederReset\Concerns\SeederTruncate` trait in your seeder class. Next time you run the seeder, you will be prompted to truncate seeders. When choose to truncate, the specified models are truncated before running the seeder:
 
 ```php
-use SnowBuilds\SeederReset\Concerns\Recommendations;
-use SnowBuilds\SeederReset\SeederReset;
+use SnowBuilds\SeederReset\Concerns\SeederTruncate;
 
 use Illuminate\Database\Seeder;
 
 class PostSeeder extends Seeder
 {
-    use SeederReset;
+    use SeederTruncate;
 
-    protected function truncated() {
-        return [
-            Analytics::class,
-            Comment::class,
-            Post::class,
-        ];
+    public $truncate = [
+        App\Models\User::class,
+        App\Models\Comment::class,
+        App\Models\Post::class,
+    ];
+
+    public function run () {
+        //
     }
 }
 ```
 
+<a name="list-tables-truncate"></a>
+### List tables to truncate
+When the truncate property is not enough, you can return an array from the `getTruncate` method:
+
+```php
+use SnowBuilds\SeederReset\Concerns\SeederTruncate;
+
+use Illuminate\Database\Seeder;
+
+class PostSeeder extends Seeder
+{
+    use SeederTruncate;
+
+    public function getTruncate() {
+        return [
+            App\Models\User::class,
+            App\Models\Comment::class,
+            App\Models\Post::class,
+        ]
+    };
+
+    public function run () {
+        //
+    }
+}
+```
+
+<a name="reset-seeders"></a>
+### Reset Seeders - Call Truncate
+Sometimes you may have seeders which call other seeders. If you only want to be prompted once you can invoke the truncate method:
+
+```php
+use SnowBuilds\SeederReset\Concerns\SeederTruncate;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    use SeederTruncate;
+
+    public function run () {
+        $this->truncate([
+            UserSeeder::class,
+            RecipeSeeder::class,
+        ]);
+
+        $this->call([
+            UserSeeder::class,
+            RecipeSeeder::class,
+        ]);
+    }
+}
+```
+
+### Reset Seeders - Replace Call
+If you are looking for something a little more implicit, you can replace the `call` method with the `reset` method, which will reset each seeder before invoking:
+
+```php
+use SnowBuilds\SeederReset\Concerns\SeederTruncate;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    use SeederTruncate;
+
+    public function run () {
+        $this->reset([
+            UserSeeder::class,
+            RecipeSeeder::class,
+        ]);
+    }
+}
+```
+
+<a name="override-seeders"></a>
+### Override Seeder
+If you want to keep the same API but want to call other seeders we recommend extending `SnowBuilds\SeederReset\Seeder`:
+
+```php
+use SnowBuilds\SeederReset\Concerns\SeederTruncate;
+
+use SnowBuilds\SeederReset\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run () {
+        $this->call([
+            UserSeeder::class,
+            RecipeSeeder::class,
+        ]);
+    }
+}
+```
+
+<a name="hooks"></a>
+### Hooks
+Sometimes truncating is not enough, and you need delete specific rows before seeding. We included `beforeTruncate` and `afterTruncate` hooks which can be used to delete whatever you want. If the hook fails the operation will rollback.
+
+> **Important**
+> The truncate operation is not performed in a transaction due to MySql limitations. If a hook fails, tables that were truncated will remain empty.
+
+```php
+use SnowBuilds\SeederReset\Concerns\SeederTruncate;
+
+use SnowBuilds\SeederReset\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function beforeTruncate()
+    {
+        User::moderators()->delete();
+        User::customers()->delete();
+    }
+
+    public function run () {
+        $this->call([
+            UserSeeder::class,
+            RecipeSeeder::class,
+        ]);
+    }
+}
+```
 
 <a name="roadmap"></a>
 ## Roadmap
-- [ ] Truncate tables from list of models
-- [ ] Truncate using table names
-- [ ] Delete data using queries
+- [x] Truncate tables from list of models
+- [x] Truncate using table names
+- [x] Delete data using queries
 
 
 <a name="changelog"></a>

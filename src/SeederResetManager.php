@@ -94,10 +94,10 @@ class SeederResetManager
     public function getTruncated(Seeder $seeder)
     {
         $parameters = SeederReset::get($class = get_class($seeder), 'parameters', []);
-        if (method_exists($class, 'truncated')) {
-            return $seeder->truncated($parameters);
-        } else if (property_exists($class, 'truncated')) {
-            return $seeder->truncated;
+        if (method_exists($class, 'getTruncate')) {
+            return $seeder->getTruncate($parameters);
+        } else if (property_exists($class, 'truncate')) {
+            return $seeder->truncate;
         }
 
         return [];
